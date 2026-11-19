@@ -1,12 +1,15 @@
 package com.library.controller;
 
+import bo.MemberBO;
+import bo.impl.MemberBOImpl;
 import dto.MemberDTO;
-import model.MemberModel;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+
+import java.time.LocalDateTime;
 
 public class AddMemberController {
 
@@ -17,39 +20,52 @@ public class AddMemberController {
     @FXML private TextArea addressArea;
     @FXML private Label messageLabel;
 
-    private final MemberModel memberModel = new MemberModel();
+    private final MemberBO memberBO = new MemberBOImpl();
 
     @FXML
     private void handleRegisterMember() {
+        System.out.println("REGISTER BUTTON CLICKED!");
+
+        String id = memberIdField.getText().trim();
+        String name = fullNameField.getText().trim();
+        String email = emailField.getText().trim();
+        String phone = phoneField.getText().trim();
+        String address = addressArea.getText().trim();
+
+        if (id.isEmpty() || name.isEmpty()) {
+            messageLabel.setText("Member ID and Full Name are required!");
+            messageLabel.setStyle("-fx-text-fill: red;");
+            new Alert(Alert.AlertType.WARNING, "Member ID and Full Name are required!").show();
+            return;
+        }
+
         try {
-            String id = memberIdField.getText().trim();
-            String name = fullNameField.getText().trim();
-
-            if (id.isEmpty() || name.isEmpty()) {
-                messageLabel.setText("ID and Name required!");
-                new Alert(Alert.AlertType.WARNING, "ID and Name required!").show();
-                return;
-            }
-
             MemberDTO dto = new MemberDTO(
                     id,
                     name,
-                    emailField.getText().trim(),
-                    phoneField.getText().trim(),
-                    addressArea.getText().trim()
+                    email,
+                    phone,
+                    address,
+                    LocalDateTime.now(),
+                    LocalDateTime.now()
             );
 
-            if (memberModel.saveMember(dto)) {
+            boolean saved = memberBO.saveMember(dto);
+
+            if (saved) {
                 messageLabel.setText("Member Added Successfully!");
+                messageLabel.setStyle("-fx-text-fill: green;");
                 new Alert(Alert.AlertType.INFORMATION, "Member Added Successfully!").show();
                 handleClear();
             } else {
-                messageLabel.setText("Failed to add member!");
+                messageLabel.setText("Failed to add member! Check console.");
+                messageLabel.setStyle("-fx-text-fill: red;");
+                new Alert(Alert.AlertType.ERROR, "Failed to add member!").show();
             }
         } catch (Exception e) {
             e.printStackTrace();
-            messageLabel.setText(e.getMessage());
-            new Alert(Alert.AlertType.ERROR, e.getMessage()).show();
+            messageLabel.setText("Error: " + e.getMessage());
+            new Alert(Alert.AlertType.ERROR, "Error: " + e.getMessage()).show();
         }
     }
 
@@ -61,5 +77,6 @@ public class AddMemberController {
         phoneField.clear();
         addressArea.clear();
         messageLabel.setText("");
+        memberIdField.requestFocus();
     }
 }

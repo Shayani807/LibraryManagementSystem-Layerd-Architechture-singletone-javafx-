@@ -1,13 +1,20 @@
-package com.library.controller;
+package Controller.Login;
 
-import dto.ReturnDTO;
+import bo.IssuedBookBO;
+import bo.impl.IssuedBookBOImpl;
+import dto.IssueDTO;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
-import model.ReturnBookModel;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ReturnBookController {
@@ -21,106 +28,75 @@ public class ReturnBookController {
     @FXML private Label statusLabel;
     @FXML private Label messageLabel;
 
-    private Map<String, Integer> issueMap = new HashMap<>();
-    private Map<Integer, String> isbnMap = new HashMap<>();
-    private final ReturnBookModel returnBookModel = new ReturnBookModel();
+    private final IssuedBookBO issuedBookBO = new IssuedBookBOImpl();
+    private final Map<String, IssueDTO> borrowedMap = new HashMap<>();
 
     @FXML
     public void initialize() {
         returnDatePicker.setValue(LocalDate.now());
-        statusLabel.setText("Not Checked");
         loadBorrowedBooks();
-        borrowedBookComboBox.setOnAction(event -> {
-            if (borrowedBookComboBox.getValue() != null) loadBookDetails();
+
+        borrowedBookComboBox.setOnAction(e -> {
+            String selected = borrowedBookComboBox.getValue();
+            if (selected != null) {
+                IssueDTO dto = borrowedMap.get(selected);
+                if (dto != null) {
+                    memberField.setText(dto.getMemberId());
+
+
+                    String bookText = dto.getTitle() != null ? dto.getIsbn() + " - " + dto.getTitle() : dto.getIsbn();
+                    bookField.setText(bookText);
+
+                    borrowedDatePicker.setValue(dto.getIssueDate());
+                    dueDatePicker.setValue(dto.getDueDate());
+
+                    if (dto.getDueDate() != null && LocalDate.now().isAfter(dto.getDueDate())) {
+                        statusLabel.setText("OVERDUE");
+                        statusLabel.setStyle("-fx-text-fill: red;");
+                    } else {
+                        statusLabel.setText("ON TIME");
+                        statusLabel.setStyle("-fx-text-fill: green;");
+                    }
+                    messageLabel.setText("");
+                }
+            }
         });
-        returnDatePicker.valueProperty().addListener((obs, oldVal, newVal) -> checkOverdueStatus());
     }
 
     private void loadBorrowedBooks() {
         ObservableList<String> list = FXCollections.observableArrayList();
-        issueMap.clear();
-        isbnMap.clear();
-        try {
-            var issuedList = returnBookModel.getAllBorrowedBooksForCombo();
-            for (var row : issuedList) {
-                int issueId = row.getIssueId();
-                String display = issueId + " - " + row.getTitle() + " (" + row.getMemberName() + ")";
+        borrowedMap.clear();
+        List<IssueDTO> all = issuedBookBO.getAllIssuedBooks();
+        for (IssueDTO dto : all) {
+            if ("BORROWED".equals(dto.getStatus())) {
+                String title = dto.getTitle() != null ? dto.getTitle() : dto.getIsbn();
+                String display = dto.getIssueId() + " - " + title + " (" + dto.getMemberId() + ")";
                 list.add(display);
-                issueMap.put(display, issueId);
-                isbnMap.put(issueId, row.getIsbn());
+                borrowedMap.put(display, dto);
             }
-            borrowedBookComboBox.setItems(list);
-        } catch (Exception e) {
-            e.printStackTrace();
-            messageLabel.setText("Error: " + e.getMessage());
         }
-    }
-
-    private void loadBookDetails() {
-        String selected = borrowedBookComboBox.getValue();
-        if (selected == null) return;
-        int issueId = issueMap.get(selected);
-        try {
-            var details = returnBookModel.getBorrowedDetailsById(issueId);
-            if (details != null) {
-                memberField.setText(details.getMemberId() + " - " + details.getMemberName());
-                bookField.setText(details.getIsbn() + " - " + details.getTitle());
-                borrowedDatePicker.setValue(details.getIssueDate());
-                dueDatePicker.setValue(details.getDueDate());
-                checkOverdueStatus();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void checkOverdueStatus() {
-        LocalDate dueDate = dueDatePicker.getValue();
-        LocalDate returnDate = returnDatePicker.getValue();
-        if (dueDate == null || returnDate == null) {
-            statusLabel.setText("Not Checked");
-            return;
-        }
-        statusLabel.setText(returnDate.isAfter(dueDate) ? "OVERDUE" : "ON TIME");
+        borrowedBookComboBox.setItems(list);
     }
 
     @FXML
     private void handleReturnBook() {
-        if (borrowedBookComboBox.getValue() == null) {
-            messageLabel.setText("Please select a borrowed book.");
-            return;
-        }
-        if (returnDatePicker.getValue() == null) {
-            messageLabel.setText("Please select the return date.");
-            return;
-        }
-        if (borrowedDatePicker.getValue() != null && returnDatePicker.getValue().isBefore(borrowedDatePicker.getValue())) {
-            messageLabel.setText("Return date cannot be before borrowed date.");
-            return;
-        }
-
-        checkOverdueStatus();
         String selected = borrowedBookComboBox.getValue();
-        int issueId = issueMap.get(selected);
-        String isbn = isbnMap.get(issueId);
-        LocalDate returnDate = returnDatePicker.getValue();
-        String status = returnDate.isAfter(dueDatePicker.getValue()) ? "OVERDUE" : "RETURNED";
+        if (selected == null) {
+            messageLabel.setText("Please select a borrowed book!");
+            return;
+        }
+        IssueDTO dto = borrowedMap.get(selected);
 
-        try {
-            ReturnDTO dto = new ReturnDTO(issueId, returnDate, status);
-            boolean isReturned = returnBookModel.returnBook(dto);
-            if (isReturned) {
-                returnBookModel.increaseBookQuantity(isbn);
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Book Returned");
-                alert.setHeaderText("Book Returned Successfully");
-                alert.setContentText("Book: " + bookField.getText() + "\nStatus: " + status);
-                alert.showAndWait();
-                handleClear();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            messageLabel.setText("Error: " + e.getMessage());
+        boolean ok = issuedBookBO.returnBook(dto.getIssueId());
+        if (ok) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Success");
+            alert.setHeaderText("Book Returned Successfully!");
+            alert.setContentText("Book: " + dto.getIsbn() + "\nMember: " + dto.getMemberId());
+            alert.showAndWait();
+            handleClear();
+        } else {
+            messageLabel.setText("Return Failed!");
         }
     }
 
@@ -133,6 +109,7 @@ public class ReturnBookController {
         dueDatePicker.setValue(null);
         returnDatePicker.setValue(LocalDate.now());
         statusLabel.setText("Not Checked");
+        statusLabel.setStyle("-fx-text-fill: black;");
         messageLabel.setText("");
         loadBorrowedBooks();
     }

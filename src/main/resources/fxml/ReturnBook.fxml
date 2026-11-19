@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
@@ -12,7 +11,7 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.library.controller.ReturnBookController"
+            fx:controller="Controller.Login.ReturnBookController"
             stylesheets="@../css/style.css"
             styleClass="dashboard-root"
             prefWidth="1200"
@@ -94,7 +93,6 @@
 
     </left>
 
-
     <!-- ================= MAIN CONTENT ================= -->
 
     <center>
@@ -109,7 +107,6 @@
                         left="50"/>
             </padding>
 
-
             <!-- HEADER -->
 
             <VBox spacing="6">
@@ -122,7 +119,6 @@
 
             </VBox>
 
-
             <!-- FORM CARD -->
 
             <VBox spacing="25"
@@ -130,7 +126,6 @@
 
                 <Label text="Return Book Information"
                        styleClass="form-card-title"/>
-
 
                 <!-- BORROWED BOOK -->
 
@@ -146,7 +141,6 @@
                               styleClass="form-input"/>
 
                 </VBox>
-
 
                 <!-- MEMBER INFO -->
 
@@ -166,7 +160,6 @@
 
                     </VBox>
 
-
                     <VBox spacing="8"
                           HBox.hgrow="ALWAYS">
 
@@ -182,7 +175,6 @@
                     </VBox>
 
                 </HBox>
-
 
                 <!-- BORROWED / DUE DATE -->
 
@@ -201,7 +193,6 @@
 
                     </VBox>
 
-
                     <VBox spacing="8"
                           HBox.hgrow="ALWAYS">
 
@@ -217,7 +208,6 @@
 
                 </HBox>
 
-
                 <!-- RETURN DATE -->
 
                 <VBox spacing="8">
@@ -231,7 +221,6 @@
                                 styleClass="form-input"/>
 
                 </VBox>
-
 
                 <!-- OVERDUE STATUS -->
 
@@ -247,14 +236,12 @@
 
                 </HBox>
 
-
                 <!-- MESSAGE -->
 
                 <Label fx:id="messageLabel"
                        text=""
                        wrapText="true"
                        styleClass="form-message"/>
-
 
                 <!-- BUTTONS -->
 
@@ -276,7 +263,6 @@
                 </HBox>
 
             </VBox>
-
 
             <!-- INFO -->
 

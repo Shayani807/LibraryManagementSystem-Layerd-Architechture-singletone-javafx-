@@ -1,5 +1,7 @@
 package com.library.controller;
 
+import bo.IssuedBookBO;
+import bo.impl.IssuedBookBOImpl;
 import dto.BorrowingHistoryDTO;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -9,7 +11,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
-import model.BorrowingHistoryModel;
+
 import java.time.LocalDate;
 
 public class BorrowingHistoryController {
@@ -25,7 +27,8 @@ public class BorrowingHistoryController {
     @FXML private Label historyCountLabel;
 
     private ObservableList<BorrowingHistoryDTO> historyList = FXCollections.observableArrayList();
-    private final BorrowingHistoryModel historyModel = new BorrowingHistoryModel();
+    // ✅ BOFactory නැතුව කෙලින්ම BOImpl එක
+    private final IssuedBookBO issuedBookBO = new IssuedBookBOImpl();
 
     @FXML
     public void initialize() {
@@ -40,7 +43,7 @@ public class BorrowingHistoryController {
 
     private void loadFromModel() {
         historyList.clear();
-        var data = historyModel.getAllHistory();
+        var data = issuedBookBO.getAllHistory();
         for (var dto : data) {
             String status = dto.getStatus();
             if (status == null || status.isEmpty()) {
